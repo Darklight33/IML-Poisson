@@ -114,7 +114,7 @@ def dpi3(vals):
         polytemp = np.append(polytemp, Poly(temp[i], x1, x2, x3, x4))
     return polytemp
 
-def kerdn(n, degree, map): #dpi_n and map need to agree (will get outofbounds though)
+def kerdn(n, degree, map, printMat, printBasis): #dpi_n and map need to agree (will get outofbounds though)
     numInp = math.comb(4, n) #number of input partials
     inputFunc = np.empty(numInp)
 
@@ -132,14 +132,16 @@ def kerdn(n, degree, map): #dpi_n and map need to agree (will get outofbounds th
                 for polz in basis:
                     coeff = applied[i].coeff_monomial(polz) #extract the relevant coefficient
                     outputVec = np.append(outputVec, coeff)
-    N = returnNullspace(outputVec, terms, numInp, numOut) 
-    processNullspace(N, degree, basis, numInp, map)
+    N = returnNullspace(outputVec, terms, numInp, numOut, printMat) 
+    if printBasis:
+        processNullspace(N, degree, basis, numInp, map)
 
-def returnNullspace(bigVec, terms, inp, out): #reshapes big list into proper matrix and returns nullspace
+def returnNullspace(bigVec, terms, inp, out, printMat): #reshapes big list into proper matrix and returns nullspace
     temp = bigVec.reshape(inp * terms, out * terms)
     temp = temp.transpose()
     M = Matrix(temp)
-    print(M)
+    if printMat:
+        print(M)
     return M.nullspace()
 
 
@@ -167,7 +169,7 @@ def processNullspace(N, degree, basis, numInp, map): #does the printing output
     print("all done")
 
 #just copied dmitry code
-def imdn(n, degree, map, nextMap): #dpi_n and map need to agree (will get outofbounds though) 
+def imdn(n, degree, map, nextMap, printMat, printBasis): #dpi_n and map need to agree (will get outofbounds though) 
     numInp = math.comb(4, n) #number of input partials
     inputFunc = np.empty(numInp)
 
@@ -185,15 +187,16 @@ def imdn(n, degree, map, nextMap): #dpi_n and map need to agree (will get outofb
                 for polz in basis:
                     coeff = applied[i].coeff_monomial(polz) #extract the relevant coefficient
                     outputVec = np.append(outputVec, coeff)
-    N = returnImage(outputVec, terms, numInp, numOut)
-    #processImage(N, degree, basis, numOut, map, nextMap)
-    return N
+    N = returnImage(outputVec, terms, numInp, numOut, printMat)
+    if printBasis:
+        processImage(N, degree, basis, numOut, map, nextMap)
 
-def returnImage(bigVec, terms, inp, out): #reshapes big list into proper matrix and returns image
+def returnImage(bigVec, terms, inp, out, printMat): #reshapes big list into proper matrix and returns image
     temp = bigVec.reshape(inp * terms, out * terms)
     temp = temp.transpose()
     M = Matrix(temp)
-    print(M)
+    if printMat:
+        print(M)
     return M.columnspace()
 
 def processImage(N, degree, basis, numInp, map, nextMap): #does the printing output
@@ -457,14 +460,14 @@ def vectorToPolynomial(degreeVF, degree, vector):
     return answerMat
     
 
-SC1 = [[0 ,0, 0, 0],
+SC1 = [[0 ,0, 0, 0], #red
       [0, 0, 0, 0],
       [0, 0, 0, 0],
       [0, 0, 0, 0],
       [x1, 0, 0, 0],
       [0, x2, 0, 0]]
 
-SC2 =[[0, 0, 0, 0],
+SC2 =[[0, 0, 0, 0], #blue
       [0, 0, 0, 0],
       [x1, 0, 0, 0],
       [0, 0, 0, 0],
@@ -472,7 +475,7 @@ SC2 =[[0, 0, 0, 0],
       [0, x2, 0, 0]]
 
 
-SC3 = [[0 ,0, 0, 0],
+SC3 = [[0 ,0, 0, 0], #purple
       [0, 0, 0, 0],
       [b*x1, 0, 0, 0],
       [0, 0, 0, 0],
@@ -483,22 +486,20 @@ SC3 = [[0 ,0, 0, 0],
 pi = generateBivector(SC1)
 checkPoisson(pi)
 
-def option1():
+def outputDomainRange():
+    printMat = True
+    printBasis = false
     checkComposite(dpi1LocalPi, dpi2LocalPi, 4, 2)
     degree = 1
-    kerdn(2, degree, dpi2LocalPi)
-    imdn(1, degree, dpi1LocalPi, dpi2LocalPi)
+    kerdn(2, degree, dpi2LocalPi, printMat, printBasis) #first number lines up with dpi_# 
+    imdn(1, degree, dpi1LocalPi, dpi2LocalPi, printMat, printBasis) #first number lines up with dpi_#, second map is just to check composition
 
-option1()
 
-def option2(inp):
+def outputCohomologyClass(inp):
     CohomologyList = inp
     for vec in CohomologyList:
-        polyRep = vectorToPolynomial(2, 3, vec)
+        polyRep = vectorToPolynomial(2, 3, vec) #degree of vectorfield and then degree of polynomial
         print(generalizedScoutenWithBivectorField(polyRep, polyRep))
-
-
-#option2(thirddgList)
 
 
 #copy paste the two matrices into Sage
@@ -508,4 +509,5 @@ def option2(inp):
 #W = B.column_space()
 #Q = V / W
 #[Q.lift(b) for b in Q.basis()]
-#should return basis for the uh
+#should return basis for the cohomology class as vectors
+#copy paste the list of lists here and then you have to make it a list not tuples
